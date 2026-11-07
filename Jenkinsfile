@@ -91,6 +91,30 @@ pipeline {
                         set -eu
                         set +x
 
+                        echo "Kubernetes context used by Jenkins:"
+                        kubectl config current-context
+                        printf 'Kubernetes API server: '
+                        kubectl config view --minify \
+                          -o jsonpath='{.clusters[0].cluster.server}'
+                        echo
+
+                        for permission in \
+                          'get secret/dockerhub-registry' \
+                          'get secret/janmeter-ai-secrets' \
+                          'create secrets' \
+                          'patch secret/dockerhub-registry' \
+                          'patch secret/janmeter-ai-secrets' \
+                          'get deployment.apps/janmeter-ai-service' \
+                          'patch deployment.apps/janmeter-ai-service'; do
+                          verb="${permission%% *}"
+                          resource="${permission#* }"
+                          if [ "$(kubectl -n "$K8S_NAMESPACE" auth can-i "$verb" "$resource")" != "yes" ]; then
+                            echo "Jenkins Kubernetes credential cannot $verb $resource in namespace $K8S_NAMESPACE." >&2
+                            echo "Update the janmeter-kubeconfig Jenkins credential or apply k8s/jenkins-rbac.yaml to the API server shown above." >&2
+                            exit 1
+                          fi
+                        done
+
                         kubectl -n "$K8S_NAMESPACE" create secret docker-registry dockerhub-registry \
                           --docker-server=https://index.docker.io/v1/ \
                           --docker-username="$DOCKER_USER" \
