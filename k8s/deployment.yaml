@@ -46,9 +46,8 @@ spec:
             - name: SPRING_DATA_REDIS_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: janmeter-ai-secrets
-                  key: SPRING_DATA_REDIS_PASSWORD
-                  optional: true
+                  name: janmeter-redis-secret
+                  key: REDIS_PASSWORD
             - name: SPRING_DATASOURCE_URL
               valueFrom:
                 secretKeyRef:

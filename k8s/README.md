@@ -13,8 +13,18 @@ The existing `janmeter-secrets` Kubernetes Secret supplies the shared PostgreSQL
 URL, username, and password. The pipeline creates/updates `janmeter-ai-secrets`
 with `OPENAI_API_KEY` without printing it.
 
-If Redis requires authentication, add `SPRING_DATA_REDIS_PASSWORD` to the
-`janmeter-ai-secrets` Secret. It is optional when Redis has no password.
+Install the cluster-internal Redis service once before the first AI deployment:
+
+```sh
+export REDIS_PASSWORD="$(openssl rand -base64 32)"
+bash k8s/install-redis.sh
+unset REDIS_PASSWORD
+```
+
+This creates the `redis` Service and the separate `janmeter-redis-secret` used
+by both Redis and JanMeter AI Service. Redis is internal-only and is not exposed
+through a NodePort or LoadBalancer. Its current data volume is ephemeral, so a
+Redis pod replacement clears cached data.
 
 JanMeter Service reaches this service inside the cluster at:
 
