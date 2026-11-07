@@ -9,9 +9,16 @@ Create these Jenkins credentials before running the pipeline:
 - `janmeter-kubeconfig`: kubeconfig file for the shared cluster.
 - `openai-api-key`: OpenAI project service-account API key (Secret text).
 
+The Jenkins agent must have Java 21 available because the Gradle toolchain and
+the production container both use Java 21.
+
 The existing `janmeter-secrets` Kubernetes Secret supplies the shared PostgreSQL
 URL, username, and password. The pipeline creates/updates `janmeter-ai-secrets`
 with `OPENAI_API_KEY` without printing it.
+
+The pipeline also creates/updates `dockerhub-registry` from
+`dockerhub-credentials`, allowing Kubernetes to pull the private
+`ananddikule/janmeter-ai-service` image.
 
 Install the cluster-internal Redis service once before the first AI deployment:
 

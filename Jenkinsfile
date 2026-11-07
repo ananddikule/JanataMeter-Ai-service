@@ -35,6 +35,7 @@ pipeline {
                     docker --version
                     kubectl --kubeconfig=/dev/null version --client
                     git --version
+                    java -version
                     test -f Dockerfile
                     test -f k8s/jenkins-deploy.sh
                     bash -n k8s/jenkins-deploy.sh
@@ -79,13 +80,26 @@ pipeline {
             steps {
                 withCredentials([
                     file(credentialsId: 'janmeter-kubeconfig', variable: 'KUBECONFIG'),
-                    string(credentialsId: 'openai-api-key', variable: 'OPENAI_API_KEY')
+                    string(credentialsId: 'openai-api-key', variable: 'OPENAI_API_KEY'),
+                    usernamePassword(
+                        credentialsId: 'dockerhub-credentials',
+                        usernameVariable: 'DOCKER_USER',
+                        passwordVariable: 'DOCKER_TOKEN'
+                    )
                 ]) {
                     sh '''
                         set -eu
                         set +x
 
                         kubectl -n "$K8S_NAMESPACE" get secret janmeter-secrets -o name
+                        kubectl -n "$K8S_NAMESPACE" get secret janmeter-redis-secret -o name
+
+                        kubectl -n "$K8S_NAMESPACE" create secret docker-registry dockerhub-registry \
+                          --docker-server=https://index.docker.io/v1/ \
+                          --docker-username="$DOCKER_USER" \
+                          --docker-password="$DOCKER_TOKEN" \
+                          --dry-run=client -o yaml | kubectl apply -f -
+
                         kubectl -n "$K8S_NAMESPACE" create secret generic janmeter-ai-secrets \
                           --from-literal=OPENAI_API_KEY="$OPENAI_API_KEY" \
                           --dry-run=client -o yaml | kubectl apply -f -

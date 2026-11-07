@@ -1,4 +1,4 @@
-FROM eclipse-temurin:17-jdk-jammy AS build
+FROM eclipse-temurin:21-jdk-jammy AS build
 
 WORKDIR /workspace
 COPY gradlew settings.gradle build.gradle ./
@@ -8,7 +8,7 @@ COPY src ./src
 RUN ./gradlew --no-daemon bootJar \
     && cp "$(find build/libs -maxdepth 1 -type f -name '*.jar' ! -name '*-plain.jar' -print -quit)" /workspace/app.jar
 
-FROM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:21-jre-jammy
 
 WORKDIR /app
 RUN groupadd --system --gid 10001 app \
