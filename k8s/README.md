@@ -31,21 +31,17 @@ The pipeline also creates/updates `dockerhub-registry` from
 `dockerhub-credentials`, allowing Kubernetes to pull the private
 `ananddikule/janmeter-ai-service` image.
 
-Install the cluster-internal Redis service once before the first AI deployment:
+Install the shared Redis service from the JanMeter Service repository once
+before the first AI deployment:
 
 ```sh
+cd ~/Documents/projects/JanataMeter-service
 bash k8s/install-redis.sh
 ```
 
-This creates the `redis` Service and the separate `janmeter-redis-secret` used
-by both Redis and JanMeter AI Service. Redis is internal-only and is not exposed
-through a NodePort or LoadBalancer. Its current data volume is ephemeral, so a
-Redis pod replacement clears cached data.
-
-The installer automatically uses local K3s when available and generates a
-secure password when the Secret does not exist. Rerunning it preserves the
-existing password. For a different cluster client, set `KUBECTL_COMMAND`, for
-example `KUBECTL_COMMAND="kubectl --context production"`.
+The JanMeter Service repository is the single source of truth for shared Redis,
+Kafka, and Kafka UI installation. The AI service continues to consume the
+cluster-internal `redis:6379` Service and `janmeter-redis-secret`.
 
 JanMeter Service reaches this service inside the cluster at:
 
