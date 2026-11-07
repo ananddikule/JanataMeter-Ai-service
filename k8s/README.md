@@ -34,15 +34,18 @@ The pipeline also creates/updates `dockerhub-registry` from
 Install the cluster-internal Redis service once before the first AI deployment:
 
 ```sh
-export REDIS_PASSWORD="$(openssl rand -base64 32)"
 bash k8s/install-redis.sh
-unset REDIS_PASSWORD
 ```
 
 This creates the `redis` Service and the separate `janmeter-redis-secret` used
 by both Redis and JanMeter AI Service. Redis is internal-only and is not exposed
 through a NodePort or LoadBalancer. Its current data volume is ephemeral, so a
 Redis pod replacement clears cached data.
+
+The installer automatically uses local K3s when available and generates a
+secure password when the Secret does not exist. Rerunning it preserves the
+existing password. For a different cluster client, set `KUBECTL_COMMAND`, for
+example `KUBECTL_COMMAND="kubectl --context production"`.
 
 JanMeter Service reaches this service inside the cluster at:
 
