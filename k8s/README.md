@@ -9,6 +9,17 @@ Create these Jenkins credentials before running the pipeline:
 - `janmeter-kubeconfig`: kubeconfig file for the shared cluster.
 - `openai-api-key`: OpenAI project service-account API key (Secret text).
 
+Apply the Jenkins namespace permissions once from an administrator shell before
+the first pipeline deployment:
+
+```sh
+kubectl apply -f k8s/jenkins-rbac.yaml
+```
+
+The RoleBinding grants the existing `default/janmeter-jenkins` service account
+namespace-only deployment access. Jenkins cannot apply this permission to
+itself.
+
 The Jenkins agent must have Java 21 available because the Gradle toolchain and
 the production container both use Java 21.
 
