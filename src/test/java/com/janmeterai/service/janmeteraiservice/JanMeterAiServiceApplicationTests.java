@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@SpringBootTest(properties = "spring.ai.google.genai.api-key=test-api-key")
+@SpringBootTest(properties = "spring.ai.openai.api-key=test-api-key")
 class JanMeterAiServiceApplicationTests {
 
     @Autowired

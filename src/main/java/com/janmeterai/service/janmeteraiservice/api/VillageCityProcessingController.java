@@ -17,9 +17,9 @@ public class VillageCityProcessingController {
         this.processingService = processingService;
     }
 
-    @PostMapping(path = "/process-district-talukas", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public SseEmitter processDistrictTalukas() {
-        return processingService.startDistrictTalukaProcessing();
+    @PostMapping(path = "/process-talukas", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public SseEmitter processTalukas() {
+        return processingService.startTalukaProcessing();
     }
 
     @PostMapping(path = {"/process-villages-pincodes", "/process-village-cities"},
