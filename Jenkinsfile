@@ -91,9 +91,6 @@ pipeline {
                         set -eu
                         set +x
 
-                        kubectl -n "$K8S_NAMESPACE" get secret janmeter-secrets -o name
-                        kubectl -n "$K8S_NAMESPACE" get secret janmeter-redis-secret -o name
-
                         kubectl -n "$K8S_NAMESPACE" create secret docker-registry dockerhub-registry \
                           --docker-server=https://index.docker.io/v1/ \
                           --docker-username="$DOCKER_USER" \
