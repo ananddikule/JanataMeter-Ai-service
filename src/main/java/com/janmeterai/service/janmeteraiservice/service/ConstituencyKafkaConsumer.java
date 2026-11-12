@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.janmeterai.service.janmeteraiservice.model.*;
 import org.slf4j.*;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
@@ -11,6 +12,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Component
+@ConditionalOnProperty(name="janmeter.kafka.enabled",havingValue="true")
 public class ConstituencyKafkaConsumer {
     private static final Logger log=LoggerFactory.getLogger(ConstituencyKafkaConsumer.class);
     private final ObjectMapper json=new ObjectMapper().findAndRegisterModules();private final ConstituencyAddressMatcher matcher;
