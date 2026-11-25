@@ -1,6 +1,14 @@
 pipeline {
     agent any
 
+    parameters {
+        choice(
+            name: 'DEPLOY_ENVIRONMENT',
+            choices: ['production', 'development'],
+            description: 'Select the Spring profile and Kubernetes configuration for this deployment.'
+        )
+    }
+
     options {
         timestamps()
         disableConcurrentBuilds()
@@ -126,6 +134,7 @@ pipeline {
                           --dry-run=client -o yaml | kubectl apply -f -
 
                         export IMAGE="$FULL_IMAGE"
+                        export DEPLOY_ENVIRONMENT="${DEPLOY_ENVIRONMENT:-production}"
                         bash k8s/jenkins-deploy.sh
                     '''
                 }

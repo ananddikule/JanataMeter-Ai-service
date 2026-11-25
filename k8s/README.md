@@ -37,6 +37,11 @@ The pipeline also creates/updates `dockerhub-registry` from
 `dockerhub-credentials`, allowing Kubernetes to pull the private
 `ananddikule/janmeter-ai-service` image.
 
+The Jenkins job exposes a `DEPLOY_ENVIRONMENT` choice. Select `development`
+to apply `application-dev.properties` with `k8s/configmap.yaml`. Select
+`production` to apply the stricter `application-prod.properties` with
+`k8s/configmap-production.yaml`. The safe default is `production`.
+
 Install the shared Redis service from the JanMeter Service repository once
 before the first AI deployment:
 

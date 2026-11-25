@@ -8,6 +8,20 @@ CONTAINER="${K8S_CONTAINER:-janmeter-ai-service}"
 : "${IMAGE:?IMAGE environment variable is required}"
 : "${KUBECONFIG:?KUBECONFIG environment variable is required}"
 
+DEPLOY_ENVIRONMENT="${DEPLOY_ENVIRONMENT:-production}"
+case "$DEPLOY_ENVIRONMENT" in
+  production)
+    CONFIG_MAP_FILE="k8s/configmap-production.yaml"
+    ;;
+  development)
+    CONFIG_MAP_FILE="k8s/configmap.yaml"
+    ;;
+  *)
+    echo "DEPLOY_ENVIRONMENT must be production or development, found: $DEPLOY_ENVIRONMENT" >&2
+    exit 1
+    ;;
+esac
+
 if [[ "$IMAGE" == *"|"* || "$IMAGE" == *$'\n'* ]]; then
   echo "IMAGE contains an invalid character." >&2
   exit 1
@@ -20,7 +34,7 @@ sed "s|image: janmeter-ai-service:local|image: $IMAGE|" \
   k8s/deployment.yaml > "$TEMP_DIR/deployment.yaml"
 
 kubectl -n "$NAMESPACE" apply \
-  -f k8s/configmap.yaml \
+  -f "$CONFIG_MAP_FILE" \
   -f "$TEMP_DIR/deployment.yaml" \
   -f k8s/service.yaml
 
