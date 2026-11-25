@@ -1,5 +1,11 @@
 # JanMeter AI Service deployment
 
+## Home-feed worker ownership
+
+JanMeter AI Service is the sole asynchronous worker for the JanMeter home feed. With `JANMETER_FEED_WORKER_ENABLED=true`, it creates the feed Kafka topics, publishes pending rows from `janmeter_feed_outbox`, consumes engagement and vote signals, updates Redis ranking data, invalidates stale feed caches, decays ranking signals, and removes old published outbox rows.
+
+JanMeter Service remains the authenticated public API and read path. Do not enable its feed workers when this deployment is active.
+
 This service uses the same Kubernetes cluster and namespace as JanMeter Service,
 but has separate Deployment, Service, ConfigMap, image, and OpenAI Secret.
 
