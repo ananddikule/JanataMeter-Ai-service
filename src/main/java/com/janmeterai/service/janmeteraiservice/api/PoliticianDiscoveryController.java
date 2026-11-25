@@ -25,18 +25,18 @@ public class PoliticianDiscoveryController {
 
     @PostMapping("/lookup")
     public LookupResponse lookup(@RequestBody LookupRequest request) {
-        return new LookupResponse(service.lookup(request.fullName()));
+        return new LookupResponse(service.lookup(request.fullName(), request.partyName()));
     }
 
     @PostMapping("/lookup-section")
     public LookupSectionResponse lookupSection(@RequestBody LookupSectionRequest request) {
-        return new LookupSectionResponse(request.section(), service.lookupSection(request.fullName(), request.section()));
+        return new LookupSectionResponse(request.section(), service.lookupSection(request.fullName(), request.partyName(), request.section()));
     }
 
     public record DiscoverRequest(List<String> positions, int fromYear, int toYear) {}
     public record DiscoverResponse(List<Map<String, Object>> candidates) {}
-    public record LookupRequest(String fullName) {}
+    public record LookupRequest(String fullName, String partyName) {}
     public record LookupResponse(Map<String, Object> candidate) {}
-    public record LookupSectionRequest(String fullName, String section) {}
+    public record LookupSectionRequest(String fullName, String partyName, String section) {}
     public record LookupSectionResponse(String section, Map<String, Object> profile) {}
 }

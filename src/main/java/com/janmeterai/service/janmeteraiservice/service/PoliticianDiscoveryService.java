@@ -38,7 +38,7 @@ public class PoliticianDiscoveryService {
                 {"fullName":"","displayName":"","dateOfBirth":null,"dateOfDeath":null,"gender":"",
                 "birthplace":"","hometown":"","currentCity":"","about":"","politicalBio":"",
                 "email":"","phone":"","website":"","facebookUrl":"","instagramUrl":"",
-                "twitterUrl":"","youtubeUrl":"","partyName":"",
+                "twitterUrl":"","youtubeUrl":"",
                 "education":[{"qualification":"","institution":"","fieldOfStudy":"",
                 "startYear":null,"endYear":null,"description":""}],
                 "family":[{"relationshipType":"","branchLabel":"","name":"","dateOfBirth":null,"description":""}],
@@ -79,10 +79,17 @@ public class PoliticianDiscoveryService {
         }
     }
 
-    public Map<String, Object> lookup(String fullName) {
+    public Map<String, Object> lookup(String fullName, String partyName) {
         if (fullName == null || fullName.isBlank()) return null;
+        String partyContext = partyContext(partyName);
         String prompt = """
                 Find the Indian politician whose full name is: %s
+                %s
+                %s
+
+                Treat the party as an identity-disambiguation hint, not as guaranteed current or historical fact.
+                Return the person's actual name in fullName; never append the party name to fullName. Verify party
+                history from sources and report changes accurately.
 
                 Return ONLY a JSON object with a candidate property. Do not use markdown. If this person cannot
                 be identified confidently, return {"candidate":null}. Include only facts supported by credible
@@ -97,7 +104,7 @@ public class PoliticianDiscoveryService {
                 {"fullName":"","displayName":"","dateOfBirth":null,"dateOfDeath":null,"gender":"",
                 "birthplace":"","hometown":"","currentCity":"","about":"","politicalBio":"",
                 "email":"","phone":"","website":"","facebookUrl":"","instagramUrl":"",
-                "twitterUrl":"","youtubeUrl":"","partyName":"",
+                "twitterUrl":"","youtubeUrl":"",
                 "education":[{"qualification":"","institution":"","fieldOfStudy":"",
                 "startYear":null,"endYear":null,"description":""}],
                 "family":[{"relationshipType":"","branchLabel":"","name":"","dateOfBirth":null,"description":""}],
@@ -121,8 +128,8 @@ public class PoliticianDiscoveryService {
                 For netWorthHistory, return every available election affidavit newest first, with exact numeric INR
                 values, ISO declaration date, direct declaration URL, election/year source and calculation notes.
                 amount means assets minus liabilities; movableAssets and immovableAssets remain separate values.
-                """.formatted(fullName.trim());
-        PoliticianResearchProvider.ResearchResult research = researchService.research(prompt, fullName.trim());
+                """.formatted(fullName.trim(), partyContext, sourcePriority(fullName, partyName));
+        PoliticianResearchProvider.ResearchResult research = researchService.research(prompt, searchContext(fullName, partyName));
         String content = research.text();
         try {
             JsonNode root = objectMapper.readTree(cleanJson(content));
@@ -139,7 +146,7 @@ public class PoliticianDiscoveryService {
         }
     }
 
-    public Map<String, Object> lookupSection(String fullName, String requestedSection) {
+    public Map<String, Object> lookupSection(String fullName, String partyName, String requestedSection) {
         if (fullName == null || fullName.isBlank()) return null;
         String section = requestedSection == null ? "" : requestedSection.trim().toUpperCase();
         String sectionInstructions = switch (section) {
@@ -148,7 +155,7 @@ public class PoliticianDiscoveryService {
                     {"fullName":"","displayName":"","dateOfBirth":null,"dateOfDeath":null,
                     "gender":"","birthplace":"","hometown":"","currentCity":"","about":"",
                     "email":"","phone":"","website":"","facebookUrl":"","instagramUrl":"",
-                    "twitterUrl":"","youtubeUrl":"","partyName":"","sources":["https://..."]}
+                    "twitterUrl":"","youtubeUrl":"","sources":["https://..."]}
                     """;
             case "EDUCATION" -> """
                     Research the complete education history, not only the highest qualification. Check official
@@ -193,7 +200,7 @@ public class PoliticianDiscoveryService {
                     """;
             case "POLITICAL" -> """
                     Return political biography and the complete term-by-term political career using exactly these fields:
-                    {"fullName":"","politicalBio":"","partyName":"","career":[{"title":"",
+                    {"fullName":"","politicalBio":"","career":[{"title":"",
                     "partyName":"","organization":"","constituency":"","constituencyType":"",
                     "stateCode":"","location":"","startDate":null,"endDate":null,
                     "currentlyHolding":false,"description":""}],"sources":["https://..."]}
@@ -204,6 +211,12 @@ public class PoliticianDiscoveryService {
         };
         String prompt = """
                 Find the Indian politician whose full name is: %s
+                %s
+                %s
+
+                Treat the party as an identity-disambiguation hint, not as guaranteed current or historical fact.
+                Return the person's actual name in fullName; never append the party name to fullName. Verify party
+                history from sources and report changes accurately.
 
                 Fetch ONLY the %s section of the JanMeter politician profile. Return ONLY a JSON object with a
                 profile property; do not use markdown. If the person cannot be identified confidently, return
@@ -212,8 +225,8 @@ public class PoliticianDiscoveryService {
                 the requested section has no reliably documented entries.
 
                 %s
-                """.formatted(fullName.trim(), section, sectionInstructions);
-        PoliticianResearchProvider.ResearchResult research = researchService.research(prompt, fullName.trim() + " " + section);
+                """.formatted(fullName.trim(), partyContext(partyName), sourcePriority(fullName, partyName), section, sectionInstructions);
+        PoliticianResearchProvider.ResearchResult research = researchService.research(prompt, searchContext(fullName, partyName) + " " + section);
         String content = research.text();
         try {
             JsonNode root = objectMapper.readTree(cleanJson(content));
@@ -228,6 +241,26 @@ public class PoliticianDiscoveryService {
         } catch (Exception exception) {
             throw new IllegalStateException("OpenAI returned an invalid " + section.toLowerCase() + " politician profile response", exception);
         }
+    }
+
+    private String partyContext(String partyName) {
+        return partyName == null || partyName.isBlank()
+                ? "No political party was supplied; identify the person using verified public evidence."
+                : "Selected political party: " + partyName.trim();
+    }
+
+    private String searchContext(String fullName, String partyName) {
+        String name = fullName == null ? "" : fullName.trim();
+        return partyName == null || partyName.isBlank() ? name : name + " " + partyName.trim();
+    }
+
+    private String sourcePriority(String fullName, String partyName) {
+        return "Research order: First search https://myneta.info/ with the targeted identity query `site:myneta.info "
+                + searchContext(fullName, partyName)
+                + "` and inspect the matching candidate affidavit/election pages. Use MyNeta first for election, "
+                + "constituency, party, education, assets, liabilities and affidavit facts. Confirm that the page "
+                + "belongs to this exact politician. Then use official Election Commission, Parliament/Assembly, "
+                + "government and party sources, followed by other credible sources, to verify facts and fill gaps.";
     }
 
     private String cleanJson(String value) {
