@@ -34,7 +34,8 @@ public class PoliticianDiscoveryService {
                 for whom you can provide at least one credible public source URL. Omit uncertain people and facts.
                 Do not invent dates, family, education, wealth, URLs, constituencies, or offices.
 
-                Each candidate must use this complete JanMeter profile shape:
+                Each candidate must use the current JanMeter create-politician profile shape. Political party
+                belongs to each career entry, never to the personal biography:
                 {"fullName":"","displayName":"","dateOfBirth":null,"dateOfDeath":null,"gender":"",
                 "birthplace":"","hometown":"","currentCity":"","about":"","politicalBio":"",
                 "email":"","phone":"","website":"","facebookUrl":"","instagramUrl":"",
@@ -47,14 +48,18 @@ public class PoliticianDiscoveryService {
                 "website":"","description":""}],
                 "netWorthHistory":[{"amount":null,"currency":"INR","asOfDate":null,"source":"",
                 "movableAssets":null,"immovableAssets":null,"liabilities":null,"declarationUrl":"","notes":""}],
-                "career":[{"title":"","partyName":"","organization":"","constituency":"",
-                "constituencyType":"","stateCode":"","location":"","startDate":null,"endDate":null,
+                "career":[{"title":"","partyName":"","organization":"",
+                "jurisdictionType":"NONE|CONSTITUENCY|MUNICIPAL_WARD","constituency":"",
+                "constituencyType":"PARLIAMENT|ASSEMBLY|","stateCode":"","stateName":"",
+                "localBodyName":"","urbanWardName":"","location":"","startDate":null,"endDate":null,
                 "currentlyHolding":false,"description":""}],
                 "sources":["https://..."],"confidence":0.0}
 
-                Dates must be ISO yyyy-MM-dd when the complete date is known; otherwise null. Each career entry
-                must represent a distinct term. Put a constituency such as Lucknow in constituency, never in title.
-                confidence must be 0 to 1. Return at most 12 candidates.
+                Use DD/MM/YYYY for a complete date, 00/MM/YYYY when only month and year are known, and
+                00/00/YYYY when only the year is known; otherwise use null. Each career entry must represent a
+                distinct term. Use CONSTITUENCY only for a Parliament or Assembly seat, MUNICIPAL_WARD only for
+                a documented municipal ward, and NONE when the position has no constituency. Put a seat such as
+                Lucknow in constituency, never in title. confidence must be 0 to 1. Return at most 12 candidates.
                 """.formatted(safeFrom, safeTo, String.join(", ", positions));
 
         PoliticianResearchProvider.ResearchResult research = researchService.research(prompt, String.join(" ", positions) + " " + safeFrom + " " + safeTo);
@@ -100,7 +105,8 @@ public class PoliticianDiscoveryService {
                 contact/social links, and the politician's complete term-by-term career timeline. Preserve empty
                 strings or arrays only when that information cannot be supported by a credible public source.
 
-                candidate must use this complete JanMeter profile shape:
+                candidate must use the current JanMeter create-politician profile shape. Political party belongs
+                to each career entry, never to the personal biography:
                 {"fullName":"","displayName":"","dateOfBirth":null,"dateOfDeath":null,"gender":"",
                 "birthplace":"","hometown":"","currentCity":"","about":"","politicalBio":"",
                 "email":"","phone":"","website":"","facebookUrl":"","instagramUrl":"",
@@ -113,13 +119,18 @@ public class PoliticianDiscoveryService {
                 "website":"","description":""}],
                 "netWorthHistory":[{"amount":null,"currency":"INR","asOfDate":null,"source":"",
                 "movableAssets":null,"immovableAssets":null,"liabilities":null,"declarationUrl":"","notes":""}],
-                "career":[{"title":"","partyName":"","organization":"","constituency":"",
-                "constituencyType":"","stateCode":"","location":"","startDate":null,"endDate":null,
+                "career":[{"title":"","partyName":"","organization":"",
+                "jurisdictionType":"NONE|CONSTITUENCY|MUNICIPAL_WARD","constituency":"",
+                "constituencyType":"PARLIAMENT|ASSEMBLY|","stateCode":"","stateName":"",
+                "localBodyName":"","urbanWardName":"","location":"","startDate":null,"endDate":null,
                 "currentlyHolding":false,"description":""}],
                 "sources":["https://..."],"confidence":0.0}
 
-                Dates must be ISO yyyy-MM-dd when the complete date is known; otherwise null. Each career entry
-                must represent a distinct term. Put a constituency such as Lucknow in constituency, never in title.
+                Use DD/MM/YYYY for a complete date, 00/MM/YYYY when only month and year are known, and
+                00/00/YYYY when only the year is known; otherwise use null. Each career entry must represent a
+                distinct term. Use CONSTITUENCY only for a Parliament or Assembly seat, MUNICIPAL_WARD only for
+                a documented municipal ward, and NONE when the position has no constituency. Put a seat such as
+                Lucknow in constituency, never in title.
                 Include every known elected, parliamentary, government, party, committee, and opposition office
                 as a separate career entry, with its party, organization, constituency, location and tenure.
                 For education, research school/secondary, college, university and professional study separately;
@@ -199,13 +210,17 @@ public class PoliticianDiscoveryService {
                     "liabilities":null,"declarationUrl":"","notes":""}],"sources":["https://..."]}
                     """;
             case "POLITICAL" -> """
-                    Return political biography and the complete term-by-term political career using exactly these fields:
+                    Return political biography and the complete term-by-term political career using exactly these fields.
+                    Political party belongs to each career entry, never to personal biography:
                     {"fullName":"","politicalBio":"","career":[{"title":"",
-                    "partyName":"","organization":"","constituency":"","constituencyType":"",
-                    "stateCode":"","location":"","startDate":null,"endDate":null,
+                    "partyName":"","organization":"","jurisdictionType":"NONE|CONSTITUENCY|MUNICIPAL_WARD",
+                    "constituency":"","constituencyType":"PARLIAMENT|ASSEMBLY|","stateCode":"",
+                    "stateName":"","localBodyName":"","urbanWardName":"","location":"",
+                    "startDate":null,"endDate":null,
                     "currentlyHolding":false,"description":""}],"sources":["https://..."]}
                     Include every known elected, parliamentary, government, party, committee and opposition office
-                    as a separate career entry. Put the seat name in constituency, never in title.
+                    as a separate career entry. Use NONE when a role has no constituency. Put the seat name in
+                    constituency, never in title.
                     """;
             default -> throw new IllegalArgumentException("Unsupported politician profile section: " + requestedSection);
         };
@@ -221,8 +236,9 @@ public class PoliticianDiscoveryService {
                 Fetch ONLY the %s section of the JanMeter politician profile. Return ONLY a JSON object with a
                 profile property; do not use markdown. If the person cannot be identified confidently, return
                 {"profile":null}. Include only facts supported by credible public sources. Do not invent facts.
-                Use ISO yyyy-MM-dd only when a complete date is known; otherwise use null. Use empty arrays when
-                the requested section has no reliably documented entries.
+                Use DD/MM/YYYY for a complete date, 00/MM/YYYY when only month and year are known, and
+                00/00/YYYY when only the year is known; otherwise use null. Use empty arrays when the requested
+                section has no reliably documented entries.
 
                 %s
                 """.formatted(fullName.trim(), partyContext(partyName), sourcePriority(fullName, partyName), section, sectionInstructions);
